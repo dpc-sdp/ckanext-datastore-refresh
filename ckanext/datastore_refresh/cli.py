@@ -31,6 +31,7 @@ def dataset(frequency):
 
     site_user = tk.get_action("get_site_user")({"ignore_auth": True}, {})
     context = {"user": site_user.get("name")}
+
     try:
         datasets = tk.get_action(
             "datastore_refresh_dataset_refresh_list_by_frequency"
@@ -95,6 +96,10 @@ def _submit_resource(dataset, resource, context):
     success = tk.get_action("xloader_submit")(context, data_dict)
     if success:
         click.secho("...ok", fg="green")
+        tk.get_action("datastore_refresh_dataset_refresh_update")(
+            {"ignore_auth": True},
+            {"package_id": dataset["id"]}
+        )
     else:
         tk.error_shout("ERROR submitting resource")
 
