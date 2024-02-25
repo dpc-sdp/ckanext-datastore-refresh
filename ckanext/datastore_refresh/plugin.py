@@ -1,12 +1,23 @@
+from __future__ import annotations
+
 import logging
 
 import requests
+
+from typing import Any
 
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as tk
 from ckan.views.api import API_DEFAULT_VERSION
 
-import ckanext.xloader.interfaces as xloader_interfaces
+try:
+    import ckanext.xloader.interfaces as loader_interfaces
+
+    use_xloader = True
+except ImportError:
+    import ckanext.datapusher.interfaces as loader_interfaces
+
+    use_xloader = False
 
 from . import cli, helpers, view
 from .logic import auth, action
@@ -22,7 +33,11 @@ class DatastoreRefreshPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IClick)
     plugins.implements(plugins.IBlueprint)
-    plugins.implements(xloader_interfaces.IXloader, inherit=True)
+
+    if use_xloader:
+        plugins.implements(loader_interfaces.IXloader, inherit=True)
+    else:
+        plugins.implements(loader_interfaces.IDataPusher, inherit=True)
 
     # ITemplateHelpers
     def get_helpers(self):
@@ -57,9 +72,25 @@ class DatastoreRefreshPlugin(plugins.SingletonPlugin):
     def get_blueprint(self):
         return view.get_blueprints()
 
-    # IXLoader
-    def after_upload(self, context, resource_dict, dataset_dict):
-        _purge_section_cache(context, resource_dict, dataset_dict)
+    if use_xloader:
+        # IXLoader
+        def after_upload(
+            self,
+            context: dict[str, Any],
+            resource_dict: dict[str, Any],
+            dataset_dict: dict[str, Any],
+        ) -> None:
+            _purge_section_cache(context, resource_dict, dataset_dict)
+
+    else:
+        # IDataPusher
+        def after_upload(
+            self,
+            context: dict[str, Any],
+            resource_dict: dict[str, Any],
+            dataset_dict: dict[str, Any],
+        ) -> None:
+            _purge_section_cache(context, resource_dict, dataset_dict)
 
 
 def _purge_section_cache(context, resource_dict, dataset_dict):
