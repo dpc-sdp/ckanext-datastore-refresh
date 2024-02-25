@@ -5,6 +5,8 @@ import logging
 import ckan.plugins.toolkit as tk
 import click
 
+from ckan.common import config
+
 
 log = logging.getLogger(__name__)
 
@@ -67,12 +69,20 @@ def _submit_resource(dataset, resource, context):
     """resource: resource dictionary"""
     # Copied and modifed from ckan/default/src/ckanext-xloader/ckanext/xloader/cli.py to check for Xloader formats before submitting
     # import here, so that that loggers are setup
-    from ckanext.xloader.plugin import XLoaderFormats
 
-    if not XLoaderFormats.is_it_an_xloader_format(resource["format"]):
+    try:
+        from ckanext.xloader.plugin import XLoaderFormats
+
+        can_subbmit = XLoaderFormats.is_it_an_xloader_format(resource["format"])
+    except ImportError:
+        can_subbmit = resource["format"] and resource[
+            "format"
+        ].lower() in config.get("ckan.datapusher.formats")
+
+    if not can_subbmit:
         click.echo(
             f'Skipping resource {resource["id"]} because format'
-            f' "{resource["format"]}" is not configured to be xloadered'
+            f' "{resource["format"]}" is not configured to be loadered'
         )
         return
     if resource["url_type"] in ("datapusher", "xloader"):
