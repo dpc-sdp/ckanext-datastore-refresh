@@ -1,0 +1,11 @@
+{% ckan_extends %}
+
+{% block subtitle %}{{ _('Administration') }}{% endblock %}
+
+{% block breadcrumb_content %}{% endblock %}
+
+{% block content_primary_nav %}
+    {{ super() }}
+
+    {{ h.build_nav_icon('datastore_refresh.datastore_refresh_config', _('Datastore refresh'), icon='gavel') }}
+{% endblock %}

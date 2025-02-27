@@ -4,19 +4,18 @@ import datetime
 from typing import Iterable, Optional
 
 from typing_extensions import Self
-from ckan.lib.webassets_tools import include_asset
 
 import ckan.model as model
+import ckan.plugins.toolkit as tk
 from ckan.lib.dictization import table_dictize
 from ckan.model.types import make_uuid
 from sqlalchemy import Column, ForeignKey, UnicodeText, DateTime, orm
 
-from .base import Base
 
 refresh_dataset_datastore_table = None
 
 
-class DatasetRefresh(Base):
+class DatasetRefresh(tk.BaseModel):
     __tablename__ = "datastore_refresh_dataset_refresh"
     id = Column(UnicodeText, primary_key=True, default=make_uuid)
     dataset_id = Column(
