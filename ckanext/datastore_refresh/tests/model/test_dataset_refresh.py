@@ -15,7 +15,7 @@ class TestRefreshDatasetDatastore:
             created_user_id=sysadmin["id"],
         )
         results.save()
-        obj = rdd.get(results.id)
+        obj = rdd.get(str(results.id))
 
         assert obj.id is not None
         assert obj.dataset_id == package["id"]
@@ -32,7 +32,7 @@ class TestRefreshDatasetDatastore:
             created_user_id=sysadmin["id"],
         )
         results.save()
-        obj = rdd.get(results.id)
+        obj = rdd.get(str(results.id))
 
         assert obj.datastore_last_refreshed is None
 
@@ -53,11 +53,11 @@ class TestRefreshDatasetDatastore:
             created_user_id=sysadmin["id"],
         )
         results.save()
-        obj = rdd.get(results.id)
+        obj = rdd.get(str(results.id))
 
         assert obj
         rdd.delete(obj.id)
-        assert rdd.get(obj.id) is None
+        assert rdd.get(str(results.id)) is None
 
     def test_cascade(self, package, sysadmin):
         results = rdd(
@@ -70,4 +70,4 @@ class TestRefreshDatasetDatastore:
         model.Session.delete(model.Package.get(package["id"]))
         model.Session.commit()
 
-        assert rdd.get(results.id) is None
+        assert rdd.get(str(results.id)) is None

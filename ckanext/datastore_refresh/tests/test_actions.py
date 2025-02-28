@@ -395,48 +395,47 @@ class TestRefreshDatastoreDatasetDelete(object):
 
     def create_test_data(self):
         dataset = factories.Dataset()
-        sysadmin = factories.Sysadmin()
-        sysadmin_obj = model.User.by_name(sysadmin["name"])
+        sysadmin = factories.SysadminWithToken()
 
-        return dataset, sysadmin_obj
+        return dataset, sysadmin
 
-    @pytest.mark.usefixtures("with_request_context")
     def test_refresh_dataset_datastore_delete(self, app):
-        dataset, sysadmin_obj = self.create_test_data()
+        dataset, sysadmin = self.create_test_data()
         data_dict = {"package_id": dataset["id"], "frequency": self.frequency}
 
         helpers.call_action(
             "datastore_refresh_dataset_refresh_create",
-            context={"auth_user_obj": sysadmin_obj},
+            context={"user": sysadmin["name"]},
             **data_dict,
         )
 
         _list = helpers.call_action(
             "datastore_refresh_dataset_refresh_list",
-            context={"auth_user_obj": sysadmin_obj},
+            context={"user": sysadmin["name"]},
         )
-        _id = _list["refresh_dataset_datastore"][0]["id"]
 
-        env = {"REMOTE_USER": str(sysadmin_obj.name)}
-        url = url_for("datastore_refresh.datastore_refresh_config")
-        postparams = {"delete_config": _id}
-        res = app.post(url, data=postparams, environ_overrides=env, status=200)
+        res = app.post(
+            url_for("datastore_refresh.datastore_refresh_config"),
+            data={"delete_config": _list["refresh_dataset_datastore"][0]["id"]},
+            headers={"Authorization": sysadmin["token"]},
+            status=200,
+        )
 
         assert "Succesfully deleted configuration" in res
 
     def test_refresh_dataset_datastore_delete_anonymous(self, app):
-        dataset, sysadmin_obj = self.create_test_data()
+        dataset, sysadmin = self.create_test_data()
         data_dict = {"package_id": dataset["id"], "frequency": self.frequency}
 
         helpers.call_action(
             "datastore_refresh_dataset_refresh_create",
-            context={"auth_user_obj": sysadmin_obj},
+            context={"user": sysadmin["name"]},
             **data_dict,
         )
 
         _list = helpers.call_action(
             "datastore_refresh_dataset_refresh_list",
-            context={"auth_user_obj": sysadmin_obj},
+            context={"user": sysadmin["name"]},
         )
         _id = _list["refresh_dataset_datastore"][0]["id"]
         env = {"REMOTE_USER": "anonymous"}
@@ -446,18 +445,18 @@ class TestRefreshDatastoreDatasetDelete(object):
         app.post(url, data=postparams, environ_overrides=env, status=403)
 
     def test_refresh_dataset_datastore_delete_normal_user(self, app):
-        dataset, sysadmin_obj = self.create_test_data()
+        dataset, sysadmin = self.create_test_data()
         data_dict = {"package_id": dataset["id"], "frequency": self.frequency}
 
         helpers.call_action(
             "datastore_refresh_dataset_refresh_create",
-            context={"auth_user_obj": sysadmin_obj},
+            context={"user": sysadmin["name"]},
             **data_dict,
         )
 
         _list = helpers.call_action(
             "datastore_refresh_dataset_refresh_list",
-            context={"auth_user_obj": sysadmin_obj},
+            context={"user": sysadmin["name"]},
         )
         normal_user = factories.User()
         _id = _list["refresh_dataset_datastore"][0]["id"]
@@ -468,18 +467,18 @@ class TestRefreshDatastoreDatasetDelete(object):
         app.post(url, data=postparams, environ_overrides=env, status=403)
 
     def test_refresh_dataset_datastore_delete_wrong_id(self):
-        dataset, sysadmin_obj = self.create_test_data()
+        dataset, sysadmin = self.create_test_data()
         data_dict = {"package_id": dataset["id"], "frequency": self.frequency}
 
         helpers.call_action(
             "datastore_refresh_dataset_refresh_create",
-            context={"auth_user_obj": sysadmin_obj},
+            context={"user": sysadmin["name"]},
             **data_dict,
         )
 
         with pytest.raises(ValidationError):
             helpers.call_action(
                 "datastore_refresh_dataset_refresh_delete",
-                context={"auth_user_obj": sysadmin_obj},
+                context={"user": sysadmin["name"]},
                 id="wrong_id",
             )

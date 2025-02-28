@@ -46,14 +46,6 @@ class DatastoreRefreshPlugin(plugins.SingletonPlugin):
         tk.add_template_directory(config_, "templates")
         tk.add_public_directory(config_, "public")
 
-        # Add a new ckan-admin tabs for our extension
-        tk.add_ckan_admin_tab(
-            tk.config,
-            "datastore_refresh.datastore_refresh_config",
-            "Datastore refresh",
-            config_var="ckan.admin_tabs",
-        )
-
     # IClick
     def get_commands(self):
         return cli.get_commands()
