@@ -3,6 +3,7 @@
 import logging
 
 import ckan.plugins.toolkit as tk
+from ckanext.datavicmain.helpers import datavic_is_datapusher_plus_format
 import click
 
 
@@ -65,16 +66,13 @@ def dataset(frequency):
 
 def _submit_resource(dataset, resource, context):
     """resource: resource dictionary"""
-    # Copied and modifed from ckan/default/src/ckanext-xloader/ckanext/xloader/cli.py to check for Xloader formats before submitting
-    # import here, so that that loggers are setup
-    from ckanext.xloader.plugin import XLoaderFormats
-
-    if not XLoaderFormats.is_it_an_xloader_format(resource["format"]):
+    if not datavic_is_datapusher_plus_format(resource["format"]):
         click.echo(
-            f'Skipping resource {resource["id"]} because format'
-            f' "{resource["format"]}" is not configured to be xloadered'
+            f'Skipping resource {resource["id"]} because format "{resource["format"]}" '
+            f'is not configured for datapusher_plus'
         )
         return
+
     if resource["url_type"] in ("datapusher", "xloader"):
         click.echo(
             f'Skipping resource {resource["id"]} because url_type'
@@ -93,7 +91,7 @@ def _submit_resource(dataset, resource, context):
         "ignore_hash": False,
     }
 
-    success = tk.get_action("xloader_submit")(context, data_dict)
+    success = tk.get_action("datapusher_submit")(context, data_dict)
     if success:
         click.secho("...ok", fg="green")
         tk.get_action("datastore_refresh_dataset_refresh_update")(
