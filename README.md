@@ -9,7 +9,7 @@ This extension provides a option to refresh/reupload the datastore data when res
 
 Works with CKAN 2.9.x and above(python v3.7 and above).
 
-Depends on [ckanext-xloader](https://github.com/ckan/ckanext-xloader)
+Depends on [ckanext-datapusher-plus](https://github.com/dathere/datapusher-plus)
 
 Compatibility with core CKAN versions:
 

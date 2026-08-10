@@ -4,8 +4,7 @@ import logging
 
 import ckan.plugins.toolkit as tk
 import click
-
-from ckan.common import config
+from ckanext.datapusher_plus import config as datapusher_plus_config
 
 
 log = logging.getLogger(__name__)
@@ -67,19 +66,9 @@ def dataset(frequency):
 
 def _submit_resource(dataset, resource, context):
     """resource: resource dictionary"""
-    # Copied and modifed from ckan/default/src/ckanext-xloader/ckanext/xloader/cli.py to check for Xloader formats before submitting
-    # import here, so that that loggers are setup
+    can_submit = _is_datapusher_plus_format(resource.get("format"))
 
-    try:
-        from ckanext.xloader.plugin import XLoaderFormats
-
-        can_subbmit = XLoaderFormats.is_it_an_xloader_format(resource["format"])
-    except ImportError:
-        can_subbmit = resource["format"] and resource[
-            "format"
-        ].lower() in config.get("ckan.datapusher.formats")
-
-    if not can_subbmit:
+    if not can_submit:
         click.echo(
             f'Skipping resource {resource["id"]} because format'
             f' "{resource["format"]}" is not configured to be loadered'
@@ -103,7 +92,7 @@ def _submit_resource(dataset, resource, context):
         "ignore_hash": False,
     }
 
-    success = tk.get_action("xloader_submit")(context, data_dict)
+    success = tk.get_action("datapusher_submit")(context, data_dict)
     if success:
         click.secho("...ok", fg="green")
         tk.get_action("datastore_refresh_dataset_refresh_update")(
@@ -112,6 +101,22 @@ def _submit_resource(dataset, resource, context):
         )
     else:
         tk.error_shout("ERROR submitting resource")
+
+
+def _is_datapusher_plus_format(resource_format):
+    """Return true when DataPusher+ is configured to process this format."""
+    supported_formats = tk.config.get("ckan.datapusher.formats") or tk.config.get(
+        "ckanext.datapusher_plus.formats"
+    )
+    if not supported_formats:
+        supported_formats = datapusher_plus_config.FORMATS
+    if isinstance(supported_formats, str):
+        supported_formats = supported_formats.split()
+
+    return bool(
+        resource_format
+        and resource_format.lower() in [fmt.lower() for fmt in supported_formats]
+    )
 
 
 @datastore_refresh.command()

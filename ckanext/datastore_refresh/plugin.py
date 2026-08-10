@@ -5,13 +5,7 @@ import requests
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as tk
 from ckan.views.api import API_DEFAULT_VERSION
-
-try:
-    import ckanext.xloader.interfaces as xloader_interfaces
-    loader_interface = xloader_interfaces.IXloader
-except ImportError:
-    import ckanext.datapusher.interfaces as datapusher_interfaces
-    loader_interface = datapusher_interfaces.IDataPusher
+from ckanext.datapusher_plus.interfaces import IDataPusher
 
 from . import cli, helpers, view
 from .logic import auth, action
@@ -27,7 +21,7 @@ class DatastoreRefreshPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IClick)
     plugins.implements(plugins.IBlueprint)
-    plugins.implements(loader_interface, inherit=True)
+    plugins.implements(IDataPusher, inherit=True)
 
     # ITemplateHelpers
     def get_helpers(self):
@@ -54,7 +48,7 @@ class DatastoreRefreshPlugin(plugins.SingletonPlugin):
     def get_blueprint(self):
         return view.get_blueprints()
 
-    # IXloader or IDataPusher depends environment
+    # IDataPusher
     def after_upload(self, context, resource_dict, dataset_dict):
         _purge_section_cache(context, resource_dict, dataset_dict)
 
