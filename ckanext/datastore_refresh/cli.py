@@ -71,7 +71,7 @@ def _submit_resource(dataset, resource, context):
     if not can_submit:
         click.echo(
             f'Skipping resource {resource["id"]} because format'
-            f' "{resource["format"]}" is not configured to be loadered'
+            f' "{resource.get("format")}" is not configured to be loadered'
         )
         return
     if resource["url_type"] in ("datapusher", "xloader"):
@@ -85,7 +85,7 @@ def _submit_resource(dataset, resource, context):
     click.echo(
         f'Submitting /dataset/{dataset["name"]}/resource/{resource["id"]}\n'
         f'url={resource["url"]}\n'
-        f'format={resource["format"]}'
+        f'format={resource.get("format")}'
     )
     data_dict = {
         "resource_id": resource["id"],
@@ -105,8 +105,8 @@ def _submit_resource(dataset, resource, context):
 
 def _is_datapusher_plus_format(resource_format):
     """Return true when DataPusher+ is configured to process this format."""
-    supported_formats = tk.config.get("ckan.datapusher.formats") or tk.config.get(
-        "ckanext.datapusher_plus.formats"
+    supported_formats = tk.config.get("ckan.datapusher.formats", "") or tk.config.get(
+        "ckanext.datapusher_plus.formats", ""
     )
     if not supported_formats:
         supported_formats = datapusher_plus_config.FORMATS
