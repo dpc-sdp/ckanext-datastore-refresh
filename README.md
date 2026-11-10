@@ -56,6 +56,7 @@ After each XLoader upload the extension can purge the cached `datastore_search` 
 (`/api/action/datastore_search?id=<id>` and `/api/3/action/datastore_search?id=<id>`), one request per path.
 `{path}` in the URL, header values or body is replaced with that path. An empty URL disables purging.
 Values pass through ini interpolation, so a `%` in a token must be written as `%%`.
+When using `cdn_purge_body`, set `Content-Type` in `cdn_purge_headers`.
 
 ```ini
 ckanext.datastore_refresh.cdn_purge_url = https://api.quantcdn.io/v1/purge

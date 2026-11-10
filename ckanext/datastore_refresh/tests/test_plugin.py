@@ -63,7 +63,7 @@ class TestAfterUpload(object):
                     "Quant-Url": path,
                 },
                 data=None,
-                timeout=10,
+                timeout=5,
             )
             for path in paths
         ]
@@ -84,7 +84,7 @@ class TestAfterUpload(object):
             f"https://cdn.test/purge{path}",
             headers={},
             data=f'{{"url": "{path}"}}',
-            timeout=10,
+            timeout=5,
         )
 
     @pytest.mark.ckan_config("ckanext.datastore_refresh.cdn_purge_url", "")
@@ -126,3 +126,15 @@ class TestAfterUpload(object):
         _upload(dataset, resource)
 
         assert request.call_count == 2
+
+    @pytest.mark.ckan_config(
+        "ckanext.datastore_refresh.cdn_purge_url", "https://api.quantcdn.io/v1/purge"
+    )
+    @pytest.mark.ckan_config("ckanext.datastore_refresh.cdn_purge_headers", '["not", "an", "object"]')
+    def test_non_object_headers_skip_purge(self, request):
+        dataset = factories.Dataset()
+        resource = factories.Resource(package_id=dataset["id"])
+
+        _upload(dataset, resource)
+
+        request.assert_not_called()

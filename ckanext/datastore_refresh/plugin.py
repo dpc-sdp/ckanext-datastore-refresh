@@ -11,6 +11,7 @@ import ckanext.xloader.interfaces as xloader_interfaces
 
 from . import cli, helpers, view
 from .logic import auth, action
+from .model import DatasetRefresh
 
 
 log = logging.getLogger(__name__)
@@ -65,16 +66,14 @@ class DatastoreRefreshPlugin(plugins.SingletonPlugin):
 
     # IXLoader
     def after_upload(self, context, resource_dict, dataset_dict):
-        try:
-            tk.get_action("datastore_refresh_dataset_refresh_update")(
-                context, {"package_id": dataset_dict.get("id")}
-            )
-        except tk.ObjectNotFound:
-            # Dataset has no refresh schedule.
-            pass
-        except Exception:
-            log.exception("Failed to update refresh record for %s", dataset_dict.get("id"))
-        _purge_cdn_cache(resource_dict["id"])
+        package_id = dataset_dict.get("id")
+        if package_id and DatasetRefresh.get_by_package_id(package_id):
+            try:
+                tk.get_action("datastore_refresh_dataset_refresh_update")(context, {"package_id": package_id})
+            except Exception:
+                log.exception("Failed to update refresh record for %s", package_id)
+        if resource_dict.get("id"):
+            _purge_cdn_cache(resource_dict["id"])
 
 
 def _purge_cdn_cache(resource_id):
@@ -86,7 +85,9 @@ def _purge_cdn_cache(resource_id):
     try:
         headers = json.loads(tk.config.get("ckanext.datastore_refresh.cdn_purge_headers") or "{}")
     except ValueError:
-        log.error("ckanext.datastore_refresh.cdn_purge_headers is not valid JSON")
+        headers = None
+    if not isinstance(headers, dict):
+        log.error("ckanext.datastore_refresh.cdn_purge_headers must be a JSON object")
         return
 
     for path in (
@@ -99,10 +100,11 @@ def _purge_cdn_cache(resource_id):
                 url.replace("{path}", path),
                 headers={k: str(v).replace("{path}", path) for k, v in headers.items()},
                 data=body.replace("{path}", path) if body else None,
-                timeout=10,
+                timeout=5,
             )
         except Exception as e:
-            log.error("CDN purge failed for %s: %s", path, e)
+            # Exception text can include the URL, which may carry a token.
+            log.error("CDN purge failed for %s: %s", path, type(e).__name__)
             continue
         if response.ok:
             log.info("CDN purge %s for %s", response.status_code, path)
