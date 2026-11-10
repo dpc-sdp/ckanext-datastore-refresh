@@ -50,6 +50,20 @@ Cron jobs can be set by the desired frequency which currently is set to 10 min, 
 
 #TODO: Make frequencies configurable via ckan.ini file
 
+### CDN purge
+
+After each DataPusher+ load the extension can purge the cached `datastore_search` responses for the resource
+(`/api/action/datastore_search?id=<id>` and `/api/3/action/datastore_search?id=<id>`), one request per path.
+`{path}` in the URL, header values or body is replaced with that path. An empty URL disables purging.
+Values pass through ini interpolation, so a `%` in a token must be written as `%%`.
+
+```ini
+ckanext.datastore_refresh.cdn_purge_url = https://api.quantcdn.io/v1/purge
+ckanext.datastore_refresh.cdn_purge_method = POST
+ckanext.datastore_refresh.cdn_purge_headers = {"Quant-Token": "...", "Quant-Customer": "...", "Quant-Project": "...", "Quant-Url": "{path}"}
+ckanext.datastore_refresh.cdn_purge_body =
+```
+
 ## Tests
 
 To run the tests, do:
